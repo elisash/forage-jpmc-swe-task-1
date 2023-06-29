@@ -1,0 +1,114 @@
+From 3d8b9b22cdfe08ff3503bac8de6b8c386b6e63e6 Mon Sep 17 00:00:00 2001
+From: elisa-sh <126708543+elisa-sh@users.noreply.github.com>
+Date: Thu, 29 Jun 2023 14:58:23 -0400
+Subject: [PATCH] fixed the priceof the individual stocks that it doesn't equal
+ the bid. Also, changed the Ratio in the client output
+
+---
+ .DS_Store      | Bin 0 -> 6148 bytes
+ client3.py     |  10 +++++++---
+ client_test.py |  33 ++++++++++++++++++---------------
+ 3 files changed, 25 insertions(+), 18 deletions(-)
+ create mode 100644 .DS_Store
+
+diff --git a/.DS_Store b/.DS_Store
+new file mode 100644
+index 0000000000000000000000000000000000000000..2a9ee7a1370a433e140fdecf487891632177c782
+GIT binary patch
+literal 6148
+zcmeHKJ5Iwu5S=kDEKwv4h;pgukRmRySf-%P1yBe|kdinBq=CY89E7XTas+OI#G9QV
+z*utVj2xg?+w>w|^N#6Ak5tp~q5z&x{3JgJ(MURNO*OZyF7+G>GW~1?Cy<GPs`K>B>
+z_MDDsM%Q%Hd4Aq|YTK4|RZSN41iE7I`gnhG_<Y*6PrtRV=PhosL{Ux~x}p_r+I4yV
+z?jhwhTf6T08@*&lR(EUvtlMXA*X1%IwTm<03^)VMz&~dIceY5etLU>c;0!neTL$EO
+z2pEFVuu)7$2d2~l0CT95U@g6b#00}=*eJpRVGRXpC|irc8V-Fhzi8MfYB;eqA8eIB
+znio#hkv}AN;;87eGvEw#8Q9V7Q11UTd@{XFemBH-&VV!U#~9$e8doJ=%I?-LuP1kH
+vz_`E=5x+(j5Ue{t0ocena*&K_53+_|G;9<li|A80(0>FHAwD?+Kfu5{WF|tk
+
+literal 0
+HcmV?d00001
+
+diff --git a/client3.py b/client3.py
+index 3fc09b7..9e9d7a6 100644
+--- a/client3.py
++++ b/client3.py
+@@ -35,14 +35,16 @@ def getDataPoint(quote):
+     stock = quote['stock']
+     bid_price = float(quote['top_bid']['price'])
+     ask_price = float(quote['top_ask']['price'])
+-    price = bid_price
++    price = (bid_price + ask_price)/2
+     return stock, bid_price, ask_price, price
+ 
+ 
+ def getRatio(price_a, price_b):
+     """ Get ratio of price_a and price_b """
+     """ ------------- Update this function ------------- """
+-    return 1
++    if (price_b == 0):
++        return
++    return price_a/price_b
+ 
+ 
+ # Main
+@@ -52,8 +54,10 @@ if __name__ == "__main__":
+         quotes = json.loads(urllib.request.urlopen(QUERY.format(random.random())).read())
+ 
+         """ ----------- Update to get the ratio --------------- """
++        prices = {}
+         for quote in quotes:
+             stock, bid_price, ask_price, price = getDataPoint(quote)
++            prices[stock] = price
+             print("Quoted %s at (bid:%s, ask:%s, price:%s)" % (stock, bid_price, ask_price, price))
+ 
+-        print("Ratio %s" % getRatio(price, price))
++        print("Ratio %s" % getRatio(prices["ABC"], prices["DEF"]))
+diff --git a/client_test.py b/client_test.py
+index af2bf26..8b019c2 100644
+--- a/client_test.py
++++ b/client_test.py
+@@ -1,24 +1,27 @@
+ import unittest
+ from client3 import getDataPoint
+ 
+-class ClientTest(unittest.TestCase):
+-  def test_getDataPoint_calculatePrice(self):
+-    quotes = [
+-      {'top_ask': {'price': 121.2, 'size': 36}, 'timestamp': '2019-02-11 22:06:30.572453', 'top_bid': {'price': 120.48, 'size': 109}, 'id': '0.109974697771', 'stock': 'ABC'},
+-      {'top_ask': {'price': 121.68, 'size': 4}, 'timestamp': '2019-02-11 22:06:30.572453', 'top_bid': {'price': 117.87, 'size': 81}, 'id': '0.109974697771', 'stock': 'DEF'}
+-    ]
+-    """ ------------ Add the assertion below ------------ """
+-
+-  def test_getDataPoint_calculatePriceBidGreaterThanAsk(self):
+-    quotes = [
+-      {'top_ask': {'price': 119.2, 'size': 36}, 'timestamp': '2019-02-11 22:06:30.572453', 'top_bid': {'price': 120.48, 'size': 109}, 'id': '0.109974697771', 'stock': 'ABC'},
+-      {'top_ask': {'price': 121.68, 'size': 4}, 'timestamp': '2019-02-11 22:06:30.572453', 'top_bid': {'price': 117.87, 'size': 81}, 'id': '0.109974697771', 'stock': 'DEF'}
+-    ]
+-    """ ------------ Add the assertion below ------------ """
+ 
++class ClientTest(unittest.TestCase):
++    def test_getDataPoint_calculatePrice(self):
++        quotes = [
++            {'top_ask': {'price': 121.2, 'size': 36}, 'timestamp': '2019-02-11 22:06:30.572453',
++             'top_bid': {'price': 120.48, 'size': 109}, 'id': '0.109974697771', 'stock': 'ABC'},
++            {'top_ask': {'price': 121.68, 'size': 4}, 'timestamp': '2019-02-11 22:06:30.572453',
++             'top_bid': {'price': 117.87, 'size': 81}, 'id': '0.109974697771', 'stock': 'DEF'}
++        ]
++        """ ------------ Add the assertion below ------------ """
+ 
+-  """ ------------ Add more unit tests ------------ """
++    def test_getDataPoint_calculatePriceBidGreaterThanAsk(self):
++        quotes = [
++            {'top_ask': {'price': 119.2, 'size': 36}, 'timestamp': '2019-02-11 22:06:30.572453',
++             'top_bid': {'price': 120.48, 'size': 109}, 'id': '0.109974697771', 'stock': 'ABC'},
++            {'top_ask': {'price': 121.68, 'size': 4}, 'timestamp': '2019-02-11 22:06:30.572453',
++             'top_bid': {'price': 117.87, 'size': 81}, 'id': '0.109974697771', 'stock': 'DEF'}
++        ]
++        """ ------------ Add the assertion below ------------ """
+ 
++    """ ------------ Add more unit tests ------------ """
+ 
+ 
+ if __name__ == '__main__':
+-- 
+2.39.1
+
